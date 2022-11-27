@@ -92,30 +92,35 @@ try{
 
 
 
-    // Loading all users to display in all users
-    app.get('/categories', verifyJWT, async(req, res) => {
+    // Loading all category name to display 
+    app.get('/categories', async(req, res) => {
         const query = {};
         const users = await categoriesCollection.find(query).toArray();
         res.send(users)
       })
   
 
-    // // Loading products using category id
-    // app.get('/category/:id', async(req, res) => {
-    // const categoryId = req.params.id;
-    // console.log(id);
-    // const query = {categoryId:categoryId}
-    // const products  = await productsCollection.find(query).toArray();
-    //   res.send(products);
+      
+// Loading category wise product using id
+app.get('/categoryProducts', async(req, res) => {
+  let query = {};
+  if(req.query.id){
+    query = {
+      categoryId : req.query.id
+    }
+  }
+  const cursor  = productsCollection.find(query);
+  const products = await cursor.toArray();
+  res.send(products)
+})
+
+
+    // // loading all products
+    // app.get('/products', verifyJWT, async(req, res) => {
+    //   const query = {};
+    //   const products = await productsCollection.find(query).toArray();
+    //   res.send(products)
     // })
-
-
-    // loading all products
-    app.get('/products', verifyJWT, async(req, res) => {
-      const query = {};
-      const products = await productsCollection.find(query).toArray();
-      res.send(products)
-    })
 
 }
 
