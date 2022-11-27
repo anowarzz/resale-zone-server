@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+require("dotenv").config();
 const port = process.env.PORT || 5000;
 const app = express();
 
@@ -19,25 +20,57 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
-// MongoDB Crud Operations
 
-async function run() {
-   
-try {
+
+
+
+
+
+// MongoDb Crud Operations
+
+
+async function run(){
+
+try{
+
+    const usersCollection = client
+    .db("ResaleMart")
+    .collection("users");
+
+
+   // Saving User information in database
+   app.post("/users", async (req, res) => {
+    const user = req.body;
+    const result = await usersCollection.insertOne(user);
+    res.send(result);
+  });
+
+
+
+
+
+    // Loading all users to display in all users
+    app.get('/users', async(req, res) => {
+        const query = {};
+        const users = await usersCollection.find(query).toArray();
+        res.send(users)
+      })
+  
+
 
 }
 
-finally {
-    
-}
-
+finally{
 
 }
 
+
+
+
+
+}
 
 run().catch(console.log)
-
-
 
 
 
