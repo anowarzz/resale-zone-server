@@ -75,7 +75,7 @@ try{
 
 
    // Saving User information in database
-   app.post("/users", verifyJWT, async (req, res) => {
+   app.post("/users", async (req, res) => {
     const user = req.body;
     const result = await usersCollection.insertOne(user);
     res.send(result);
@@ -100,9 +100,9 @@ try{
       })
   
 
-      
+
 // Loading category wise product using id
-app.get('/categoryProducts', async(req, res) => {
+app.get('/categoryProducts', verifyJWT, async(req, res) => {
   let query = {};
   if(req.query.id){
     query = {
