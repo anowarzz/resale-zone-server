@@ -11,7 +11,7 @@ app.use(express.json());
 
 // Connecting server to mongoDB
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.v1rp4a3.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
@@ -61,7 +61,7 @@ async function run() {
 
       if (user) {
         const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
-          expiresIn: "1d",
+          expiresIn: "1h",
         });
         return res.send({ accessToken: token });
       }
@@ -86,12 +86,19 @@ async function run() {
       return res.send(result);
     });
 
+
+
     // Loading all users to display in all users
-    app.get("/users", verifyJWT, async (req, res) => {
+    app.get("/users", async (req, res) => {
       const query = {};
       const users = await usersCollection.find(query).toArray();
       res.send(users);
     });
+
+
+
+
+
 
     // Loading all category name to display
     app.get("/categories", async (req, res) => {
@@ -100,8 +107,11 @@ async function run() {
       res.send(users);
     });
 
+
+
+
     // Loading category wise product using id
-    app.get("/categoryProducts", verifyJWT, async (req, res) => {
+    app.get("/categoryProducts", async (req, res) => {
       let query = {};
       if (req.query.id) {
         query = {
@@ -113,12 +123,64 @@ async function run() {
       res.send(products);
     });
 
-    //Sending BookedProducts to
+
+
+    //Sending BookedProducts to database
     app.post("/bookedProducts", async (req, res) => {
       const bookingProduct = req.body;
       const product = await bookedProductsCollection.insertOne(bookingProduct);
       res.send(product);
     });
+
+
+    //Sending BookedProducts to database
+    // app.post("/bookedProducts", async (req, res) => {
+    //   const bookingProduct = req.body;
+      
+    //   const query = {
+    //     buyerEmail : bookingProduct.buyerEmail,
+    //   }
+    //   const alreadyBooked = await bookedProductsCollection.find(query).toArray;
+
+    //   if(alreadyBooked){
+    //     const message = `You have already booked this ${bookingProduct.productName}`;
+    //     return res.send({ acknowledged: false, message })
+    //   }
+
+    //   const product = await bookedProductsCollection.insertOne(bookingProduct);
+    //   res.send(product);
+    // });
+
+
+
+
+
+// checking user role
+app.get('/users/type/:email', async(req, res) => {
+  const email = req.params.email;
+  const query = {email}
+  const user = await usersCollection.findOne(query);
+  res.send({userType: user?.userType})
+})
+
+
+// Loading my orders for buyer
+app.get('/myOrders', async(req, res) => {
+  let query = {};
+
+      if (req.query.email) {
+        query = {
+          buyerEmail: req.query.email,
+        };
+      }
+      const cursor = bookedProductsCollection.find(query);
+      const products = await cursor.toArray();
+  res.send(products)
+})
+
+
+
+
   } finally {
   }
 }
