@@ -183,6 +183,7 @@ async function run() {
       res.send(products);
     });
 
+
     //Advertise one  product
     app.put("/products/:id", async (req, res) => {
       const id = req.params.id;
@@ -257,6 +258,51 @@ app.get('/users/sellers', async(req, res) => {
       const result = await usersCollection.deleteOne(filter);
       res.send(result);
     });
+
+// Verify a seller
+app.put('/users/seller/:id', async(req, res) => {
+  const id = req.params.id;
+  const filter = {_id : ObjectId(id)}
+  const option = {upsert : true}
+  const updatedDoc = {
+    $set : {
+      isSellerVerified : true
+    }
+  }
+  const result = await usersCollection.updateOne(filter, updatedDoc, option)
+  res.send(result)
+})
+
+
+
+    //Report a product
+    app.put("/products/report/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const option = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          isReported: true,
+        },
+      };
+      const result = await productsCollection.updateOne(
+        filter,
+        updatedDoc,
+        option
+      );
+      res.send(result);
+    });
+
+
+// Loading all reported products for admin
+app.get('/products/reported', async(req, res) => {
+  const query = {
+    isReported : true
+  }
+  const result = await productsCollection.find(query).toArray()
+  res.send(result)
+
+})
 
 
   } 
