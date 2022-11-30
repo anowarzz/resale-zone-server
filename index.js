@@ -86,8 +86,6 @@ async function run() {
       return res.send(result);
     });
 
-
-
     // Loading all users to display in all users
     app.get("/users", async (req, res) => {
       const query = {};
@@ -95,20 +93,12 @@ async function run() {
       res.send(users);
     });
 
-
-
-
-
-
     // Loading all category name to display
     app.get("/categories", async (req, res) => {
       const query = {};
       const users = await categoriesCollection.find(query).toArray();
       res.send(users);
     });
-
-
-
 
     // Loading category wise product using id
     app.get("/categoryProducts", async (req, res) => {
@@ -123,8 +113,6 @@ async function run() {
       res.send(products);
     });
 
-
-
     //Sending BookedProducts to database
     app.post("/bookedProducts", async (req, res) => {
       const bookingProduct = req.body;
@@ -132,11 +120,10 @@ async function run() {
       res.send(product);
     });
 
-
     //Sending BookedProducts to database
     // app.post("/bookedProducts", async (req, res) => {
     //   const bookingProduct = req.body;
-      
+
     //   const query = {
     //     buyerEmail : bookingProduct.buyerEmail,
     //   }
@@ -151,22 +138,18 @@ async function run() {
     //   res.send(product);
     // });
 
+    // checking user role
+    app.get("/users/type/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const user = await usersCollection.findOne(query);
+      res.send({ userType: user?.userType });
+    });
 
 
-
-
-// checking user role
-app.get('/users/type/:email', async(req, res) => {
-  const email = req.params.email;
-  const query = {email}
-  const user = await usersCollection.findOne(query);
-  res.send({userType: user?.userType})
-})
-
-
-// Loading my orders for buyer
-app.get('/myOrders', async(req, res) => {
-  let query = {};
+    // Loading my orders for buyer
+    app.get("/myOrders", async (req, res) => {
+      let query = {};
 
       if (req.query.email) {
         query = {
@@ -175,61 +158,91 @@ app.get('/myOrders', async(req, res) => {
       }
       const cursor = bookedProductsCollection.find(query);
       const products = await cursor.toArray();
-  res.send(products)
+      res.send(products);
+    });
+
+    // adding a product to the database
+    app.post("/products", async (req, res) => {
+      const product = req.body;
+      console.log(product);
+
+      const result = await productsCollection.insertOne(product);
+      res.send(result);
+    });
+
+    // Loading product of a seller
+    app.get("/myProducts", async (req, res) => {
+      let query = {};
+      if (req.query.email) {
+        query = {
+          sellerEmail: req.query.email,
+        };
+      }
+      const cursor = productsCollection.find(query);
+      const products = await cursor.toArray();
+      res.send(products);
+    });
+
+    //Advertise one  product
+    app.put("/products/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const option = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          isAdvertised: true,
+        },
+      };
+      const result = await productsCollection.updateOne(
+        filter,
+        updatedDoc,
+        option
+      );
+      res.send(result);
+    });
+
+    // Deleting one product
+    app.delete("/products/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await productsCollection.deleteOne(filter);
+      res.send(result);
+    });
+
+    // Loading advertise product to homepage
+    app.get("/advertisedProducts", async (req, res) => {
+      const query = {
+        isAdvertised: true,
+      };
+      const cursor = productsCollection.find(query);
+      const products = await cursor.toArray();
+      res.send(products);
+    });
+
+// Loading all buyers from database 
+app.get('/users/buyers', async(req, res) => {
+  const query = {
+    userType : 'buyer'
+  }
+  const cursor = usersCollection.find(query);
+  const buyers = await cursor.toArray();
+  res.send(buyers);
 })
 
 
+// Loading all sellers from database 
+app.get('/users/sellers', async(req, res) => {
+  const query = {
+    userType : 'seller'
+  }
+  const cursor = usersCollection.find(query);
+  const sellers = await cursor.toArray();
+  res.send(sellers);
+})
 
-// adding a product to the database
-app.post('/products', async(req, res) => {
-  const product = req.body;
-  console.log(product);
+  } 
   
-  const result = await productsCollection.insertOne(product);
-  res.send(result)
-})
-
-
-// Loading product of a seller
-app.get('/myProducts', async(req, res) => {
-
-  let query = {};
-  if (req.query.email) {
-    query = {
-    sellerEmail: req.query.email,
-    }
-  }
-  const cursor = productsCollection.find(query)
-  const products = await cursor.toArray();
-  res.send(products)
-})
-
-//Advertise one  product
-app.put('/products/:id', async(req, res) => {
-  const id = req.params.id;
-  const filter = {_id: ObjectId(id)}
-  const option = {upsert : true}
-  const updatedDoc = {
-    $set: {
-      isAdvertised : true
-    }
-  }
-  const result = await productsCollection.updateOne(filter, updatedDoc, option)
-  res.send(result)
-})
-
-
-// Deleting one product
-app.delete('/products/:id', async(req, res) => {
-  const id = req.params.id;
-  const filter = {_id: ObjectId(id)};
-  const result = await productsCollection.deleteOne(filter);
-  res.send(result)
-
-})
-
-
-  } finally {
+  finally {
   }
 }
 
