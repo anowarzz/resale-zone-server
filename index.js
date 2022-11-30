@@ -240,6 +240,25 @@ app.get('/users/sellers', async(req, res) => {
   res.send(sellers);
 })
 
+
+    // Deleting A buyer form database
+    app.delete("/users/buyer/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id)};
+      const result = await usersCollection.deleteOne(filter);
+      res.send(result);
+    });
+
+
+    // Deleting A seller form database
+    app.delete("/users/seller/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id)};
+      const result = await usersCollection.deleteOne(filter);
+      res.send(result);
+    });
+
+
   } 
   
   finally {
@@ -250,7 +269,7 @@ run().catch(console.log);
 
 // Basic server setup
 app.get("/", (req, res) => {
-  res.send("ResaleMart server is running successfully");
+  res.send("ResaleZone server is running successfully");
 });
 
 // Server running check on console
