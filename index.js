@@ -182,7 +182,7 @@ async function run() {
     });
 
     // Loading product of a seller
-    app.get("/myProducts", verifyJWT, async (req, res) => {
+    app.get("/myProducts", async (req, res) => {
       const email = req.query.email;
       query = {
         sellerEmail: email,
