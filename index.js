@@ -65,6 +65,20 @@ async function run() {
       next();
     };
 
+    // Verify admin has to run after verify jwt
+    const verifySeller = async (req, res, next) => {
+      const decodedEmail = req.decoded.email;
+      const query = { email: decodedEmail };
+      const user = await usersCollection.findOne(query);
+
+      if (user?.userType !== "seller") {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
+
+
+
     // sending jwt token to client side while login/signup
     app.post("/jwt", async (req, res) => {
       const currentUser = req.body;
@@ -133,23 +147,7 @@ async function run() {
       res.send(product);
     });
 
-    //Sending BookedProducts to database
-    // app.post("/bookedProducts", async (req, res) => {
-    //   const bookingProduct = req.body;
-
-    //   const query = {
-    //     buyerEmail : bookingProduct.buyerEmail,
-    //   }
-    //   const alreadyBooked = await bookedProductsCollection.find(query).toArray;
-
-    //   if(alreadyBooked){
-    //     const message = `You have already booked this ${bookingProduct.productName}`;
-    //     return res.send({ acknowledged: false, message })
-    //   }
-
-    //   const product = await bookedProductsCollection.insertOne(bookingProduct);
-    //   res.send(product);
-    // });
+ 
 
     // checking user role
     app.get("/users/type/:email", async (req, res) => {
@@ -173,7 +171,7 @@ async function run() {
     });
 
     // adding a product to the database
-    app.post("/products", async (req, res) => {
+    app.post("/products", verifyJWT, verifySeller, async (req, res) => {
       const product = req.body;
       console.log(product);
 
