@@ -79,22 +79,51 @@ async function run() {
 
 
 
-    // sending jwt token to client side while login/signup
-    app.post("/jwt", async (req, res) => {
-      const currentUser = req.body;
-      const email = currentUser?.email;
-      const query = { email: email };
-      const user = await usersCollection.findOne(query);
+   // sending jwt token to client side while login/signup
+   app.post("/jwt", async (req, res) => {
+    const currentUser = req.body;
+    const email = currentUser?.email;
+      const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
+        expiresIn: "1d",
+      });
+      return res.send({ accessToken: token });
+    })
 
-      if (user) {
-        const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
-          expiresIn: "1d",
-        });
-        return res.send({ accessToken: token });
-      }
 
-      res.status(403).send({ accessToken: "" });
-    });
+
+
+
+
+
+
+
+
+
+
+
+    // // sending jwt token to client side while login/signup
+    // app.post("/jwt", async (req, res) => {
+    //   const currentUser = req.body;
+    //   const email = currentUser?.email;
+    //   const query = { email: email };
+    //   const user = await usersCollection.findOne(query);
+
+    //   if (user) {
+    //     const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
+    //       expiresIn: "1d",
+    //     });
+    //     return res.send({ accessToken: token });
+    //   }
+
+    //   res.status(403).send({ accessToken: "" });
+    // });
+
+
+
+
+
+
+
 
     // Saving User information in database
     app.post("/users", async (req, res) => {
