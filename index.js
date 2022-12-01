@@ -53,33 +53,27 @@ async function run() {
       .db("ResaleZone")
       .collection("bookedProducts");
 
+    // Verify admin has to run after verify jwt
+    const verifyAdmin = async (req, res, next) => {
+      const decodedEmail = req.decoded.email;
+      const query = { email: decodedEmail };
+      const user = await usersCollection.findOne(query);
 
-// Verify admin has to run after verify jwt
-const verifyAdmin = async(req, res, next) => {
-
-  const decodedEmail = req.decoded.email;
-  const query = {email : decodedEmail}
-  const user = await usersCollection.findOne(query);
-  
-  if(user?.userType !== 'admin'){
-    return res.status(403).send({message: 'forbidden access'})
-  }
-  next();
-  }
-  
-
-
-
+      if (user?.userType !== "admin") {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
 
     // sending jwt token to client side while login/signup
     app.post("/jwt", async (req, res) => {
       const currentUser = req.body;
-      const email = currentUser?.email
-      const query = { email:email };
+      const email = currentUser?.email;
+      const query = { email: email };
       const user = await usersCollection.findOne(query);
 
       if (user) {
-        const token = jwt.sign({email}, process.env.ACCESS_TOKEN, {
+        const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
           expiresIn: "1d",
         });
         return res.send({ accessToken: token });
@@ -165,17 +159,14 @@ const verifyAdmin = async(req, res, next) => {
       res.send({ userType: user?.userType });
     });
 
-
     // Loading my orders for buyer
     app.get("/myOrders", verifyJWT, async (req, res) => {
-  
+      const email = req.query.email;
 
-    const email = req.query.email ;
+      query = {
+        buyerEmail: email,
+      };
 
-        query = {
-          buyerEmail: email,
-        };
-   
       const cursor = bookedProductsCollection.find(query);
       const products = await cursor.toArray();
       res.send(products);
@@ -191,18 +182,16 @@ const verifyAdmin = async(req, res, next) => {
     });
 
     // Loading product of a seller
-    app.get("/myProducts",verifyJWT, async (req, res) => {
-
-      const email = req.query.email ;
+    app.get("/myProducts", verifyJWT, async (req, res) => {
+      const email = req.query.email;
       query = {
         sellerEmail: email,
       };
- 
+
       const cursor = productsCollection.find(query);
       const products = await cursor.toArray();
       res.send(products);
     });
-
 
     //Advertise one  product
     app.put("/products/:id", verifyJWT, async (req, res) => {
@@ -240,61 +229,64 @@ const verifyAdmin = async(req, res, next) => {
       res.send(products);
     });
 
-// Loading all buyers from database 
-app.get('/users/buyers', verifyJWT, async(req, res) => {
+    // Loading all buyers from database
+    app.get("/users/buyers", verifyJWT, async (req, res) => {
+      const query = {
+        userType: "buyer",
+      };
+      const cursor = usersCollection.find(query);
+      const buyers = await cursor.toArray();
+      res.send(buyers);
+    });
 
-  const query = {
-    userType : 'buyer'
-  }
-  const cursor = usersCollection.find(query);
-  const buyers = await cursor.toArray();
-  res.send(buyers);
-})
-
-
-// Loading all sellers from database 
-app.get('/users/sellers', verifyJWT, async(req, res) => {
-  const query = {
-    userType : 'seller'
-  }
-  const cursor = usersCollection.find(query);
-  const sellers = await cursor.toArray();
-  res.send(sellers);
-})
-
+    // Loading all sellers from database
+    app.get("/users/sellers", verifyJWT, async (req, res) => {
+      const query = {
+        userType: "seller",
+      };
+      const cursor = usersCollection.find(query);
+      const sellers = await cursor.toArray();
+      res.send(sellers);
+    });
 
     // Deleting A buyer form database
     app.delete("/users/buyer/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
-      const filter = { _id: ObjectId(id)};
+      const filter = { _id: ObjectId(id) };
       const result = await usersCollection.deleteOne(filter);
       res.send(result);
     });
-
 
     // Deleting A seller form database
-    app.delete("/users/seller/:id", verifyJWT, verifyAdmin, async (req, res) => {
+    app.delete(
+      "/users/seller/:id",
+      verifyJWT,
+      verifyAdmin,
+      async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) };
+        const result = await usersCollection.deleteOne(filter);
+        res.send(result);
+      }
+    );
+
+    // Verify a seller
+    app.put("/users/seller/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
-      const filter = { _id: ObjectId(id)};
-      const result = await usersCollection.deleteOne(filter);
+      const filter = { _id: ObjectId(id) };
+      const option = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          isSellerVerified: true,
+        },
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updatedDoc,
+        option
+      );
       res.send(result);
     });
-
-// Verify a seller
-app.put('/users/seller/:id', verifyJWT, verifyAdmin, async(req, res) => {
-  const id = req.params.id;
-  const filter = {_id : ObjectId(id)}
-  const option = {upsert : true}
-  const updatedDoc = {
-    $set : {
-      isSellerVerified : true
-    }
-  }
-  const result = await usersCollection.updateOne(filter, updatedDoc, option)
-  res.send(result)
-})
-
-
 
     //Report a product
     app.put("/products/report/:id", async (req, res) => {
@@ -314,39 +306,31 @@ app.put('/users/seller/:id', verifyJWT, verifyAdmin, async(req, res) => {
       res.send(result);
     });
 
+    // Loading all reported products for admin
+    app.get("/products/reported", async (req, res) => {
+      const query = {
+        isReported: true,
+      };
+      const result = await productsCollection.find(query).toArray();
+      res.send(result);
+    });
 
-// Loading all reported products for admin
-app.get('/products/reported', async(req, res) => {
-  const query = {
-    isReported : true
-  }
-  const result = await productsCollection.find(query).toArray()
-  res.send(result)
+    // Checking if a user is admin or not
+    app.get("/users/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      res.send({ isAdmin: user?.userType === "admin" });
+    });
 
-})
-
-// Checking if a user is admin or not
-app.get('/users/admin/:email', async(req, res) => {
-  const email = req.params.email;
-  const query = {email : email}
-  const user = await usersCollection.findOne(query)
-  res.send({isAdmin : user?.userType === 'admin'})
-})
-
-
-// Checking if a user is seller or not
-app.get('/users/seller/:email', async(req, res) => {
-  const email = req.params.email;
-  const query = {email : email}
-  const user = await usersCollection.findOne(query)
-  res.send({isSeller : user?.userType === 'seller'})
-})
-
-
-
-  } 
-  
-  finally {
+    // Checking if a user is seller or not
+    app.get("/users/seller/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      res.send({ isSeller: user?.userType === "seller" });
+    });
+  } finally {
   }
 }
 
