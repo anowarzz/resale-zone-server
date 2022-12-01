@@ -304,6 +304,24 @@ app.get('/products/reported', async(req, res) => {
 
 })
 
+// Checking if a user is admin or not
+app.get('/users/admin/:email', async(req, res) => {
+  const email = req.params.email;
+  const query = {email : email}
+  const user = await usersCollection.findOne(query)
+  res.send({isAdmin : user?.userType === 'admin'})
+})
+
+
+// Checking if a user is seller or not
+app.get('/users/admin/:email', async(req, res) => {
+  const email = req.params.email;
+  const query = {email : email}
+  const user = await usersCollection.findOne(query)
+  res.send({isAdmin : user?.userType === 'seller'})
+})
+
+
 
   } 
   
