@@ -53,15 +53,34 @@ async function run() {
       .db("ResaleZone")
       .collection("bookedProducts");
 
+
+// Verify admin has to run after verify jwt
+const verifyAdmin = async(req, res, next) => {
+
+  const decodedEmail = req.decoded.email;
+  const query = {email : decodedEmail}
+  const user = await usersCollection.findOne(query);
+  
+  if(user?.userType !== 'admin'){
+    return res.status(403).send({message: 'forbidden access'})
+  }
+  next();
+  }
+  
+
+
+
+
     // sending jwt token to client side while login/signup
-    app.get("/jwt", async (req, res) => {
-      const email = req.query.email;
-      const query = { email: email };
+    app.post("/jwt", async (req, res) => {
+      const currentUser = req.body;
+      const email = currentUser?.email
+      const query = { email:email };
       const user = await usersCollection.findOne(query);
 
       if (user) {
-        const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
-          expiresIn: "1h",
+        const token = jwt.sign({email}, process.env.ACCESS_TOKEN, {
+          expiresIn: "1d",
         });
         return res.send({ accessToken: token });
       }
@@ -148,14 +167,15 @@ async function run() {
 
 
     // Loading my orders for buyer
-    app.get("/myOrders", async (req, res) => {
-      let query = {};
+    app.get("/myOrders", verifyJWT, async (req, res) => {
+  
 
-      if (req.query.email) {
+    const email = req.query.email ;
+
         query = {
-          buyerEmail: req.query.email,
+          buyerEmail: email,
         };
-      }
+   
       const cursor = bookedProductsCollection.find(query);
       const products = await cursor.toArray();
       res.send(products);
@@ -171,13 +191,13 @@ async function run() {
     });
 
     // Loading product of a seller
-    app.get("/myProducts", async (req, res) => {
-      let query = {};
-      if (req.query.email) {
-        query = {
-          sellerEmail: req.query.email,
-        };
-      }
+    app.get("/myProducts",verifyJWT, async (req, res) => {
+
+      const email = req.query.email ;
+      query = {
+        sellerEmail: email,
+      };
+ 
       const cursor = productsCollection.find(query);
       const products = await cursor.toArray();
       res.send(products);
@@ -185,7 +205,7 @@ async function run() {
 
 
     //Advertise one  product
-    app.put("/products/:id", async (req, res) => {
+    app.put("/products/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
       const option = { upsert: true };
@@ -221,7 +241,8 @@ async function run() {
     });
 
 // Loading all buyers from database 
-app.get('/users/buyers', async(req, res) => {
+app.get('/users/buyers', verifyJWT, async(req, res) => {
+
   const query = {
     userType : 'buyer'
   }
@@ -232,7 +253,7 @@ app.get('/users/buyers', async(req, res) => {
 
 
 // Loading all sellers from database 
-app.get('/users/sellers', async(req, res) => {
+app.get('/users/sellers', verifyJWT, async(req, res) => {
   const query = {
     userType : 'seller'
   }
@@ -243,7 +264,7 @@ app.get('/users/sellers', async(req, res) => {
 
 
     // Deleting A buyer form database
-    app.delete("/users/buyer/:id", async (req, res) => {
+    app.delete("/users/buyer/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id)};
       const result = await usersCollection.deleteOne(filter);
@@ -252,7 +273,7 @@ app.get('/users/sellers', async(req, res) => {
 
 
     // Deleting A seller form database
-    app.delete("/users/seller/:id", async (req, res) => {
+    app.delete("/users/seller/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id)};
       const result = await usersCollection.deleteOne(filter);
@@ -260,7 +281,7 @@ app.get('/users/sellers', async(req, res) => {
     });
 
 // Verify a seller
-app.put('/users/seller/:id', async(req, res) => {
+app.put('/users/seller/:id', verifyJWT, verifyAdmin, async(req, res) => {
   const id = req.params.id;
   const filter = {_id : ObjectId(id)}
   const option = {upsert : true}
@@ -314,11 +335,11 @@ app.get('/users/admin/:email', async(req, res) => {
 
 
 // Checking if a user is seller or not
-app.get('/users/admin/:email', async(req, res) => {
+app.get('/users/seller/:email', async(req, res) => {
   const email = req.params.email;
   const query = {email : email}
   const user = await usersCollection.findOne(query)
-  res.send({isAdmin : user?.userType === 'seller'})
+  res.send({isSeller : user?.userType === 'seller'})
 })
 
 
