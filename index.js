@@ -186,6 +186,8 @@ async function run() {
       res.send({ userType: user?.userType });
     });
 
+
+
     // Loading my orders for buyer
     app.get("/myOrders", verifyJWT, async (req, res) => {
       const email = req.query.email;
@@ -276,6 +278,8 @@ async function run() {
       res.send(sellers);
     });
 
+
+
     // Deleting A buyer form database
     app.delete("/users/buyer/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const id = req.params.id;
@@ -283,6 +287,8 @@ async function run() {
       const result = await usersCollection.deleteOne(filter);
       res.send(result);
     });
+
+
 
     // Deleting A seller form database
     app.delete(
@@ -296,6 +302,8 @@ async function run() {
         res.send(result);
       }
     );
+
+
 
     // Verify a seller
     app.put("/users/seller/:id", verifyJWT, verifyAdmin, async (req, res) => {
@@ -315,6 +323,8 @@ async function run() {
       res.send(result);
     });
 
+
+
     //Report a product
     app.put("/products/report/:id", async (req, res) => {
       const id = req.params.id;
@@ -333,6 +343,8 @@ async function run() {
       res.send(result);
     });
 
+
+
     // Loading all reported products for admin
     app.get("/products/reported", async (req, res) => {
       const query = {
@@ -342,6 +354,7 @@ async function run() {
       res.send(result);
     });
 
+
     // Checking if a user is admin or not
     app.get("/users/admin/:email", async (req, res) => {
       const email = req.params.email;
@@ -350,6 +363,7 @@ async function run() {
       res.send({ isAdmin: user?.userType === "admin" });
     });
 
+
     // Checking if a user is seller or not
     app.get("/users/seller/:email", async (req, res) => {
       const email = req.params.email;
@@ -357,7 +371,20 @@ async function run() {
       const user = await usersCollection.findOne(query);
       res.send({ isSeller: user?.userType === "seller" });
     });
-  } finally {
+
+
+  // checking if a user is buyer or not
+    app.get("/users/buyer/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      res.send({ isBuyer: user?.userType === "buyer" });
+    });
+
+
+  } 
+  finally {
+
   }
 }
 
