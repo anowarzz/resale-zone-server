@@ -93,14 +93,6 @@ async function run() {
 
 
 
-
-
-
-
-
-
-
-
     // // sending jwt token to client side while login/signup
     // app.post("/jwt", async (req, res) => {
     //   const currentUser = req.body;
@@ -156,8 +148,9 @@ async function run() {
       res.send(users);
     });
 
-    // Loading category wise product using id
+    // Loading category wise products using category id
     app.get("/categoryProducts", async (req, res) => {
+  
       let query = {};
       if (req.query.id) {
         query = {
@@ -168,6 +161,23 @@ async function run() {
       const products = await cursor.toArray();
       res.send(products);
     });
+
+
+
+// Loading advertised product details using product id
+    app.get("/adProductDetails/:id", async (req, res) => {
+  
+      const id = req.query.id
+      const query = {_id: ObjectId(id) };
+ 
+      const cursor = productsCollection.findOne(query);
+      const advertisedProduct = await cursor.toArray();
+      res.send(advertisedProduct);
+    });
+
+
+
+
 
     //Sending BookedProducts to database
     app.post("/bookedProducts", async (req, res) => {
